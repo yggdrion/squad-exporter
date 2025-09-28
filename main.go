@@ -303,14 +303,28 @@ func (mc *MetricsCollector) startMetricsCollection(interval time.Duration) {
 }
 
 func loadServers(filename string) ([]Server, error) {
+	// Check if the file exists and is actually a file (not a directory)
+	fileInfo, err := os.Stat(filename)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, fmt.Errorf("servers file '%s' does not exist - please create it", filename)
+		}
+		return nil, fmt.Errorf("failed to stat servers file '%s': %w", filename, err)
+	}
+
+	// Ensure it's actually a file, not a directory
+	if fileInfo.IsDir() {
+		return nil, fmt.Errorf("'%s' is a directory, not a file - please remove the directory and create a proper JSON file", filename)
+	}
+
 	data, err := os.ReadFile(filename)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read servers file: %w", err)
+		return nil, fmt.Errorf("failed to read servers file '%s': %w", filename, err)
 	}
 
 	var servers []Server
 	if err := json.Unmarshal(data, &servers); err != nil {
-		return nil, fmt.Errorf("failed to decode servers JSON: %w", err)
+		return nil, fmt.Errorf("failed to decode servers JSON from '%s': %w", filename, err)
 	}
 
 	return servers, nil
@@ -348,7 +362,7 @@ func main() {
 	// Load server configurations initially to verify file format
 	servers, err := loadServers("servers.json")
 	if err != nil {
-		log.Fatalf("Failed to load servers: %v", err)
+		log.Fatalf("FATAL: Cannot start without valid servers.json file: %v", err)
 	}
 
 	// Calculate optimal collection interval based on server count
