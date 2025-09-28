@@ -1,0 +1,8 @@
+services:
+  squad-exporter:
+    build: .
+    container_name: squad-exporter
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./servers.json:/app/servers.json:ro
