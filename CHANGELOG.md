@@ -1,3 +1,11 @@
+## [1.0.4](https://github.com/yggdrion/squad-exporter/compare/v1.0.3...v1.0.4) (2025-10-03)
+
+### Bug Fixes
+
+* add github-action versions ([f8b55d4](https://github.com/yggdrion/squad-exporter/commit/f8b55d4a7c767d7abbcac9b8e24b5ea077c69229))
+* missing ga version ([720388e](https://github.com/yggdrion/squad-exporter/commit/720388e53b3c4fed039039c51e06932342028ea0))
+* universal renovate config ([e136b6d](https://github.com/yggdrion/squad-exporter/commit/e136b6d891fa625a51213b35be15d84db21b448d))
+
 ## [1.0.3](https://github.com/yggdrion/squad-exporter/compare/v1.0.2...v1.0.3) (2025-09-30)
 
 ### Bug Fixes
