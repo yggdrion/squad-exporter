@@ -420,6 +420,6 @@ func main() {
 		port = p
 	}
 
-	log.Printf("Starting server on http://localhost:%s", port)
+	log.Printf("Starting server on http://127.0.0.1:%s", port)
 	log.Fatal(http.ListenAndServe(":"+port, r))
 }
