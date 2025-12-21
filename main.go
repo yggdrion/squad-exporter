@@ -13,6 +13,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/time/rate"
@@ -112,10 +113,11 @@ type MetricsCollector struct {
 	ticker          *time.Ticker
 	rateLimitHits   int
 	lastRateLimit   time.Time
+	bmBaseURL       string
 }
 
 // NewMetricsCollector creates a new metrics collector with rate limiting
-func NewMetricsCollector(serversFile string) *MetricsCollector {
+func NewMetricsCollector(serversFile string, bmBaseURL string) *MetricsCollector {
 	// BattleMetrics limits: 60 requests/minute (1/sec), 15 requests/second burst
 	// Optimize for maximum collection frequency while respecting limits
 	// - Burst: 15 requests (allows collecting all servers quickly)
@@ -127,6 +129,7 @@ func NewMetricsCollector(serversFile string) *MetricsCollector {
 		httpClient:      &http.Client{Timeout: 10 * time.Second},
 		rateLimiter:     rateLimiter,
 		lastServerCount: -1, // Initialize to -1 to force interval calculation on first run
+		bmBaseURL:       bmBaseURL,
 	}
 }
 
@@ -138,7 +141,16 @@ func (mc *MetricsCollector) fetchServerData(server Server) error {
 		return fmt.Errorf("rate limiter error for server %s: %w", server.Name, err)
 	}
 
-	resp, err := mc.httpClient.Get(server.URL)
+	// Replace BattleMetrics URL with configured base URL if needed
+	url := server.URL
+	if mc.bmBaseURL != "https://api.battlemetrics.com" {
+		// Replace the base URL and adjust the path for proxy
+		// Standard: https://api.battlemetrics.com/servers/{id}
+		// Proxy:    https://{proxy}/squad/bm/{id}
+		url = strings.Replace(server.URL, "https://api.battlemetrics.com/servers/", mc.bmBaseURL+"/squad/bm/", 1)
+	}
+
+	resp, err := mc.httpClient.Get(url)
 	if err != nil {
 		scrapeErrors.WithLabelValues(server.Name).Inc()
 		return fmt.Errorf("failed to fetch data for server %s: %w", server.Name, err)
@@ -358,7 +370,19 @@ func calculateOptimalInterval(serverCount int) time.Duration {
 	return totalTime + 5*time.Second
 }
 
+func getEnvOrDefault(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
+}
+
 func main() {
+	// Load .env file if it exists
+	if err := godotenv.Load(); err != nil {
+		log.Printf("No .env file found or error loading it: %v (continuing anyway)", err)
+	}
+
 	// Load server configurations initially to verify file format
 	servers, err := loadServers("servers.json")
 	if err != nil {
@@ -384,8 +408,12 @@ func main() {
 		scrapeErrors,
 	)
 
-	// Create metrics collector with filename
-	collector := NewMetricsCollector("servers.json")
+	// Get BattleMetrics base URL from environment with fallback to standard API
+	bmBaseURL := getEnvOrDefault("BM_BASE_URL", "https://api.battlemetrics.com")
+	log.Printf("Using BattleMetrics base URL: %s", bmBaseURL)
+
+	// Create metrics collector with filename and base URL
+	collector := NewMetricsCollector("servers.json", bmBaseURL)
 
 	// Start collecting metrics with dynamic interval
 	collector.startMetricsCollection(interval)
@@ -415,10 +443,7 @@ func main() {
 		}
 	})
 
-	port := "8080"
-	if p := os.Getenv("PORT"); p != "" {
-		port = p
-	}
+	port := getEnvOrDefault("PORT", "8080")
 
 	log.Printf("Starting server on http://127.0.0.1:%s", port)
 	log.Fatal(http.ListenAndServe(":"+port, r))
