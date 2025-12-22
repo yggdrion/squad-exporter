@@ -1,3 +1,15 @@
+## [1.1.0](https://github.com/yggdrion/squad-exporter/compare/v1.0.4...v1.1.0) (2025-12-22)
+
+### Bug Fixes
+
+* log message ([c785e14](https://github.com/yggdrion/squad-exporter/commit/c785e143236fb8f6100ec50f94eee5489f10791d))
+* renovate schedule ([456e91a](https://github.com/yggdrion/squad-exporter/commit/456e91a36db1a351ff55ca03c39b0b5e64320693))
+* renovate schedule ([f09e92b](https://github.com/yggdrion/squad-exporter/commit/f09e92b54133ea5cf712c968f5933626fc3fcf21))
+
+### Features
+
+* proxy url ([9ddd286](https://github.com/yggdrion/squad-exporter/commit/9ddd28668911144548a80889434be9a49fe4616f))
+
 ## [1.0.4](https://github.com/yggdrion/squad-exporter/compare/v1.0.3...v1.0.4) (2025-10-03)
 
 ### Bug Fixes
